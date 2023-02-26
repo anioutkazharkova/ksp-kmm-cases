@@ -5,6 +5,9 @@ pluginManagement {
         mavenLocal()
         mavenCentral()
         maven(url = "https://jitpack.io")
+        maven(url = "https://plugins.gradle.org/m2/")
+        google()
+        maven (url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/bootstrap")
     }
 }
 
@@ -25,3 +28,7 @@ include(":processor")
 include(":annotations")
 include(":network")
 include(":core")
+include(":kmm_plugin")
+include(":kmm_plugin_runtime")
+include(":kmm_plugin_native")
+include(":kmm_plugin_gradle")

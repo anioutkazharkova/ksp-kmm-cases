@@ -1,7 +1,9 @@
 plugins {
     kotlin("multiplatform")
+    id("com.android.library")
 }
 kotlin {
+    android()
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
@@ -29,6 +31,12 @@ kotlin {
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
             }
         }
+        val androidMain by getting {
+            //dependsOn(jvmMain)
+dependencies {
+    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+}
+        }
         val jvmMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
@@ -46,5 +54,13 @@ kotlin {
                 implementation("io.ktor:ktor-client-ios:$ktorVersion")
             }
         }
+    }
+}
+android {
+    compileSdk = 33
+    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
+    defaultConfig {
+        minSdk = 26
+        targetSdk = 33
     }
 }

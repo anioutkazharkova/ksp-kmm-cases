@@ -4,9 +4,19 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("com.google.devtools.ksp")
+    kotlin("plugin.serialization")
+    id("kmm_plugin")
 }
+apply(plugin =  "kmm_plugin")
 
 kotlin {
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs = freeCompilerArgs + "-Xallow-result-return-type"
+            }
+        }
+    }
     android()
     
     listOf(
@@ -26,12 +36,15 @@ kotlin {
                 implementation(project(":processor"))
                 implementation(project(":network"))
                 implementation(project(":core"))
-                kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+              implementation("com.azharkova.kmm.plugin:kmm_plugin_runtime:0.1.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
+           // kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
             }
         }
         val androidMain by getting {
             dependencies {
-                kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
+             //  kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
             }
         }
         val iosX64Main by getting
@@ -42,21 +55,26 @@ kotlin {
             iosX64Main.dependsOn(this)
             iosArm64Main.dependsOn(this)
             iosSimulatorArm64Main.dependsOn(this)
-            kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
+           // kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
         }
     }
 }
 
 android {
     namespace = "com.azharkova.kmmkspcases"
-    compileSdk = 32
+    compileSdk = 33
     defaultConfig {
-        minSdk = 21
-        targetSdk = 32
+        minSdk = 26
+        targetSdk = 33
     }
 }
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(project(":processor"))
-    ksp(project(":processor"))
+    add("kspCommonMainMetadata", project(":processor"))
+    add("kspIosX64", project(":processor"))
+//    add("kspSimulatorArm64", project(":processor"))
+    add("kspIosSimulatorArm64",  project(":processor"))
+    add("kspIosArm64", project(":processor"))
+    add("kspAndroid", project(":processor"))
 }

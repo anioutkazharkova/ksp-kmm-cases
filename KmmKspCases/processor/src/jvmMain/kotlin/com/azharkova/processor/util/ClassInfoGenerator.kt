@@ -1,5 +1,6 @@
 package com.azharkova.processor.util
 
+import com.azharkova.network.IApi
 import com.azharkova.processor.data.ClassInfo
 import com.azharkova.processor.data.FunctionData
 import com.squareup.kotlinpoet.*
@@ -21,7 +22,7 @@ fun ClassInfo.getImplClassFileSource(): String {
             optinAnnotation
         )
         .addModifiers(classData.modifiers)
-        .addStatement("return _${classData.name}Impl().also{ it.setClient(NetworkClient()) }")
+        .addStatement("return ${classData.name}Impl().also{ it.setClient(NetworkClient()) }")
         .receiver(TypeVariableName(ktorfitExtClass.name))
         .returns(TypeVariableName(classData.name))
         .build()
@@ -61,24 +62,30 @@ fun ClassInfo.getImplClassFileSource(): String {
         propBuilder.build()
     }
 
-    val implClassName = "_${classData.name}Impl"
+    val implClassName = "${classData.name}Impl"
 
     val clientProperty = com.squareup.kotlinpoet.PropertySpec
         .builder(
             "client",
             TypeVariableName(clientClass.name),
-            listOf(com.squareup.kotlinpoet.KModifier.PRIVATE, com.squareup.kotlinpoet.KModifier.LATEINIT)
+
         )
+        .addModifiers(com.squareup.kotlinpoet.KModifier.PRIVATE, KModifier.LATEINIT)
+       // .initializer("client")
         .mutable(true)
         .build()
-
+    val initConstructor = FunSpec.constructorBuilder()
+        //.addParameter("client", TypeVariableName(clientClass.name))
+        .addStatement("this.client = ${clientClass.name}()")
+        .build()
     val implClassSpec = com.squareup.kotlinpoet.TypeSpec.classBuilder(implClassName)
         .addAnnotation(
             optinAnnotation
         )
+        .primaryConstructor(initConstructor)
         .addModifiers(classData.modifiers)
         .addSuperinterface(ClassName(classData.packageName, classData.name))
-        .addSuperinterface(ClassName("com.azharkova.network", "Api"))
+        .addSuperinterface(IApi::class.java.asTypeName())
         .addFunctions(classData.functions.map { it.toFunSpec() }.flatten())
         .addFunction(setClientFunction)
         .addProperty(
@@ -98,7 +105,7 @@ fun ClassInfo.getImplClassFileSource(): String {
 
 fun FunctionData.toFunSpec(): List<FunSpec> {
     val returnTypeName = this.returnType.name
-    val typeWithoutOuterType = returnTypeName.substringAfter("<").substringBeforeLast(">")
+    val typeWithoutOuterType = if (!returnTypeName.contains("Result")) returnTypeName else  returnTypeName.substringAfter("<").substringBeforeLast(">")
     val nullableText = if (!this.returnType.name.endsWith("?")) {
         ""
     } else {

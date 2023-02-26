@@ -13,11 +13,13 @@ import com.azharkova.core.IInteractor
 import com.azharkova.kmmkspcases.*
 
 class MainActivity : Activity(), ITestView {
-    override var interactor: IInteractor? by interactors(this)
+    override var interactor: IInteractor? = null
+
+    //override var interactor: IInteractor? by interactors(this)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        (interactor as? TestInteractor)?.calculate()
+        Greeting().greet()
+       // (interactor as? TestInteractor)?.calculate()
 
     }
 }

@@ -18,3 +18,18 @@ annotation class Presenter
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
 annotation class View
+
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.SOURCE)
+annotation class Api
+
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.SOURCE)
+annotation class UseCase(val repo: KClass<*>,val request: RequestType)
+
+@Target(AnnotationTarget.FUNCTION)
+annotation class BindRequest(val type: RequestType)
+
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.SOURCE)
+annotation class GenUseCase(val repo: KClass<*>, val request: String)

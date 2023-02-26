@@ -16,6 +16,9 @@ abstract class BasePresenter<T:IView> : IPresenter<T> {
 }
 interface  IView {
     var interactor: IInteractor?
+    get() = null
+    set(value) {}
+   // fun<T:IInteractor> setupInteractor(interactor: T)
 }
 
 interface IModule {

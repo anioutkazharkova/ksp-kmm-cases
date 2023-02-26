@@ -10,7 +10,8 @@ expect fun createHttpClient() : HttpClient
 class NetworkClient {
     var httpClient = createHttpClient()
 
-    suspend inline fun<reified T> getData(path: String, headers: Map<String, String> = mapOf(), httpMethod: String): Result<T> {
+    suspend inline fun<reified T> getData(path: String, headers: Map<String, String> = mapOf(), httpMethod: String): T {
+       print(path)
         return try {
             val response = httpClient.get {
                 url(path)
@@ -19,9 +20,9 @@ class NetworkClient {
                     header(it.key, it.value)
                 }
             }
-            Result.success(response.body<T>())
+            response.body<T>()
         }catch (e: Exception) {
-            Result.failure(e)
+            throw  e
         }
     }
 }

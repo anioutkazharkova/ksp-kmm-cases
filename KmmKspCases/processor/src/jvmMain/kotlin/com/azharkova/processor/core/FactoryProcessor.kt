@@ -77,14 +77,7 @@ class FactoryProcessor constructor(private val env: SymbolProcessorEnvironment):
             }
     }
 
-    private fun getParamValue(annotation: KSAnnotation, paramName: String): KSType? {
-        val annotationArgument = annotation.arguments
-            .find { argument -> argument.name?.asString() == paramName }
-        logger.warn(annotationArgument?.value.toString())
-        val annotationArgumentValue = annotationArgument?.value as? KSType
 
-        return annotationArgumentValue
-    }
 
     fun generateImplClass(moduleDataList: List<ModuleData>, codeGenerator: CodeGenerator) {
         moduleDataList.forEach { classData ->

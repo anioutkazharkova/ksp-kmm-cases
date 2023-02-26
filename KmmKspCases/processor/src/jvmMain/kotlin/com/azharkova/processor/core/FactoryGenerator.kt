@@ -8,8 +8,8 @@ import com.azharkova.processor.util.addImports
 import com.azharkova.processor.util.resolveTypeName
 import com.squareup.kotlinpoet.*
 
-fun List<ModuleData>.generateClassSource():String {
-val classData = this
+fun List<ModuleData>.generateClassSource(): String {
+    val classData = this
     val packageName = classData.first().packageName
     val implClassName = "ConfigFactory"
 
@@ -21,26 +21,26 @@ val classData = this
 
     val companion = TypeSpec.companionObjectBuilder().addProperty(
         PropertySpec.builder("instance", ClassName(packageName, implClassName))
-        .mutable(false)
-        .initializer("${implClassName}()")
-        .build())
+            .mutable(false)
+            .initializer("${implClassName}()")
+            .build()
+    )
         .build()
 
 
     val createFunction = com.squareup.kotlinpoet.FunSpec.builder("create")
         .addParameter("view", IView::class.java)
         .returns(IInteractor::class.asTypeName().copy(nullable = true))
-
-        createFunction.addStatement("val configurator = ")
-        createFunction.beginControlFlow("when (view)")
+        .addStatement("val configurator = ")
+        .beginControlFlow("when (view)")
         .apply {
             classData.forEach {
                 addStatement("is ${it.view.resolveTypeName()} -> ${it.name}Impl()")
             }
         }.addStatement("else -> null").endControlFlow()
-            .addStatement("return configurator?.configurate(view)")
+        .addStatement("return configurator?.configurate(view)").build()
     val implClassSpec = com.squareup.kotlinpoet.TypeSpec.classBuilder(implClassName)
-        .addFunction(createFunction.build())
+        .addFunction(createFunction)
         .addType(companion)
         .build()
     return com.squareup.kotlinpoet.FileSpec.builder(packageName, implClassName)

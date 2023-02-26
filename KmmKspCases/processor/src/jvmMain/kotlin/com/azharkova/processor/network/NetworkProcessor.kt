@@ -1,12 +1,16 @@
 package com.azharkova.processor.network
 
+import com.azharkova.core.Api
 import com.azharkova.network.*
+import com.azharkova.processor.core.ApiData
+import com.azharkova.processor.core.generateClassSource
 import com.azharkova.processor.data.ClassInfo
 import com.azharkova.processor.util.getImplClassFileSource
 import com.azharkova.processor.util.toClassData
 import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.FileSpec
 import java.io.OutputStreamWriter
@@ -26,7 +30,25 @@ class NetworkProcessor constructor(private val env: SymbolProcessorEnvironment):
               classDec.toClassData(logger, resolver)
             }
         generateImplClass(classDataList, codeGenerator)
+        val apiData = getApi(resolver).map { api ->
+            val className = api.simpleName.asString()
+            val packageName = api.packageName.asString()
+            ApiData(className,packageName)
+        }.toList()
+
+        if (apiData.isNotEmpty()) {
+            logger.warn(apiData.generateClassSource())
+            logger.warn("has api")
+           generateApiFactory(apiData, codeGenerator)
+        }
+
         return emptyList()
+    }
+
+    private fun getApi(resolver: Resolver): Sequence<KSClassDeclaration> {
+        return resolver.getSymbolsWithAnnotation(Api::class.java.name).map { logger.warn(it.annotations.toString())
+            it}
+            .filterIsInstance<KSClassDeclaration>().distinct()
     }
 
     /**
@@ -52,7 +74,7 @@ fun generateImplClass(classDataList: List<ClassInfo>, codeGenerator: CodeGenerat
 
         val packageName = classData.packageName
         val className = classData.name
-        val fileName = "_${className}Impl"
+        val fileName = "${className}Impl"
 
         codeGenerator.createNewFile(Dependencies.ALL_FILES, packageName, fileName , "kt").use { output ->
             OutputStreamWriter(output).use { writer ->
@@ -60,4 +82,16 @@ fun generateImplClass(classDataList: List<ClassInfo>, codeGenerator: CodeGenerat
             }
         }
     }
+}
+
+fun generateApiFactory(apiList: List<ApiData>, codeGenerator: CodeGenerator) {
+    val source = apiList.generateClassSource()
+    val packageName = apiList.first().packageName
+    val fileName = "ApiFactory"
+    codeGenerator.createNewFile(Dependencies.ALL_FILES, packageName, fileName , "kt").use { output ->
+        OutputStreamWriter(output).use { writer ->
+            writer.write(source)
+        }
+    }
+
 }
