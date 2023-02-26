@@ -38,6 +38,15 @@ abstract public class CoroutineUseCase<in T:Any, out R:Any>(
     }
 }
 
+public interface GenericUseCase<T : Any,R: Any> {
+    suspend fun execute(param: T? = null): R
+}
+
+public suspend fun<T:Any,R:Any> GenericUseCase<T,R>.request(param: T? = null): Result<R> = withContext(Dispatchers.Default) {
+    print("test usecase")
+    runCatching {
+        execute(param) }
+}
 
 public interface  SuspendUseCase {
     /**

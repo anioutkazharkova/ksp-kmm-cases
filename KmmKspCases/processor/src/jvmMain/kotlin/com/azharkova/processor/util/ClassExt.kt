@@ -92,14 +92,6 @@ fun KSFunctionDeclaration.toFunctionData(
     val functionAnnotationList = mutableListOf<FunctionAnnotation>()
 
     funcDeclaration.getHeadersAnnotation()?.let { headers ->
-        headers.path.forEach {
-            //Check if headers are in valid format
-            try {
-                val (key, value) = it.split(":")
-            } catch (exception: Exception) {
-
-            }
-        }
         functionAnnotationList.add(headers)
     }
 
@@ -121,9 +113,6 @@ fun KSFunctionDeclaration.toFunctionData(
 
 
 fun KSValueParameter.getParamAnnotationList(logger: KSPLogger): List<ParameterAnnotation> {
-    val ksValueParameter = this
-    val KEY_MAP = "Map"
-    val KEY_STRING = "String"
 
     val paramAnnos = mutableListOf<ParameterAnnotation>()
 

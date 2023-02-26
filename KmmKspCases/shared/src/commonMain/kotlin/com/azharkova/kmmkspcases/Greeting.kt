@@ -53,10 +53,6 @@ class Greeting {
                 print(e.message)
             }
         }
-         //  val list = TestCase.usecase().invoke()
-//val list: List<Int> = TestCase.usecase().invoke("path")
-//TestCase.usecase().invoke("path")
-       // }
         return "Hello, ${platform.name}!"
     }
 }

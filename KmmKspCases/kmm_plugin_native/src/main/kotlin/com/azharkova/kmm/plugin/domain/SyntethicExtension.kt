@@ -23,7 +23,11 @@ class SyntethicExtension(): SyntheticResolveExtension {
      * Ensure companion is added to the class
      */
     override fun getSyntheticCompanionObjectNameIfNeeded(thisDescriptor: ClassDescriptor): Name? =
-        Names.DEFAULT_COMPANION
+        if (thisDescriptor.isUsecase) {
+            Names.DEFAULT_COMPANION
+        } else {
+            null
+        }
 
     override fun getSyntheticFunctionNames(thisDescriptor: ClassDescriptor): List<Name> =
         if (thisDescriptor.isCompanionObject && thisDescriptor.isUsecaseCompanion) {
@@ -41,29 +45,13 @@ class SyntethicExtension(): SyntheticResolveExtension {
     ) {
         if (name != Names.USECASE_METHOD) return
         val classDescriptor = getForCompanion(thisDescriptor) ?: return
-        //var apiClazz: ClassDescriptor? = null
+
         var params = mutableListOf<KotlinType>()
-       /* thisDescriptor.annotations?.findAnnotation(usecaseName)?.allValueArguments?.forEach{
-            (name, value) ->
-            if (name.asString() == "repo") {
-                val  apiRef = (value.value as KClassValue.Value.NormalClass).classId
 
-                apiClazz =  thisDescriptor.module.findClassAcrossModuleDependencies(
-                    apiRef
-                )
-            }
-            if (name.asString() == "request") {
-apiClazz?.getMemberScope(TypeSubstitution.EMPTY)?.getDescriptorsFiltered(DescriptorKindFilter.FUNCTIONS) {
-    it == Name.identifier(value.toString())
-
-}?.firstOrNull()?.let {
-    val returnType = (it as? FunctionDescriptor)?.returnType
-    val valueType = (it as? FunctionDescriptor)?.valueParameters?.firstOrNull()?.type
-
-    params.addAll(listOfNotNull(returnType, valueType))
-}
-            }
-        }*/
+        val any = thisDescriptor.module.findClassAcrossModuleDependencies(
+            ClassIds.ANY
+        )?.defaultType
+        params.addAll(listOf(any!!,any!!))
         result.add(createGetterDescriptor(thisDescriptor, classDescriptor, params))
     }
 
@@ -77,6 +65,9 @@ apiClazz?.getMemberScope(TypeSubstitution.EMPTY)?.getDescriptorsFiltered(Descrip
 
 val ClassDescriptor.isUsecaseCompanion
     get() = isCompanionObject && (containingDeclaration as ClassDescriptor).isUseCase()
+
+val ClassDescriptor.isUsecase
+    get() = this.isUseCase()
 
 fun createGetterDescriptor(
     companionClass: ClassDescriptor,
@@ -92,17 +83,9 @@ fun createGetterDescriptor(
     )
 
     val usecaseClass = clazz.module.findClassAcrossModuleDependencies(
-        ClassIds.COROUTINE_USE_CASE
+        ClassIds.GENERIC_USE_CASE
     )!!
 
-    /*val unit = clazz.module.findClassAcrossModuleDependencies(
-        ClassIds.UNIT
-    )!!
-    var returnType = KotlinTypeFactory.simpleNotNullType(
-        TypeAttributes.Empty,
-        unit,
-        emptyList()
-    )*/
 
     val returnType = KotlinTypeFactory.simpleNotNullType(
         TypeAttributes.Empty,
