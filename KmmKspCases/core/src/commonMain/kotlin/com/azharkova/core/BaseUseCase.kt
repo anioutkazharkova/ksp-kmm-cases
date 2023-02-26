@@ -45,11 +45,7 @@ public interface  SuspendUseCase {
      */
     suspend fun execute(param: Any? = null): Any
 
-    public suspend fun request(param: Any? = null): Result<*> = withContext(Dispatchers.Default) {
-        print("test usecase")
-        runCatching {
-            execute(param) }
-    }
+
     /*open suspend fun<T:Any, R: Any> execute(param: T): R =  kotlin.TODO()
 
     suspend fun executeSimple(param: T): R = kotlin.TODO()
@@ -61,4 +57,9 @@ public interface  SuspendUseCase {
     }*/
 }
 
+public suspend fun SuspendUseCase.request(param: Any? = null): Result<*> = withContext(Dispatchers.Default) {
+    print("test usecase")
+    runCatching {
+        execute(param) }
+}
 

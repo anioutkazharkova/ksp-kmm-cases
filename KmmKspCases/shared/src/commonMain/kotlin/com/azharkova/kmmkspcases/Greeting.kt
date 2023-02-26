@@ -46,7 +46,7 @@ class Greeting {
             try {
                 val k = NewsLoadCase.usecase()
                 print(k)
-                val data = k.execute()
+                val data = k.request()
                 val t = k
                 print(data)//.request<Unit, List<String>>(Unit)
             } catch (e: Exception) {
