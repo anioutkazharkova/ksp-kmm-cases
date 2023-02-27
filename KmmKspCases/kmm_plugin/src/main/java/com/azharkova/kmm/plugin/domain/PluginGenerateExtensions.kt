@@ -15,6 +15,5 @@ class PluginGenerationExtension (private val messageCollector: MessageCollector,
        UseCaseLoweringPass(pluginContext, messageCollector).lower(moduleFragment)
         messageCollector.report(
             CompilerMessageSeverity.WARNING, "***Hello from compiler")
-        //println("test compile" + moduleFragment.dump())
     }
 }

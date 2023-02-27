@@ -104,14 +104,6 @@ class UseCaseLoweringPass(private val pluginContext: IrPluginContext, private va
            val function = this
            dispatchReceiverParameter = implClass.thisReceiver?.copyTo(this)
            val implName = this.returnType.classFqName?.asString().orEmpty()//.classFqName?.asString() + "Impl"
-          /* body = DeclarationIrBuilder(pluginContext, symbol).irBlockBody {
-               +irReturn(
-                   irCallConstructor(
-                       pluginContext.referenceClass(FqName(implName))!!.constructors.first(),
-                       emptyList()
-                   )
-               )
-           }*/
            this.body = createLazyBody(function)
        }
 
@@ -323,13 +315,6 @@ fun IrPluginContext.blockBody(
 ): IrBlockBody =
     DeclarationIrBuilder(this, symbol).irBlockBody { block() }
 
-@OptIn(FirIncompatiblePluginAPI::class)
-fun IrPluginContext.resultWith(type: IrType):IrType? {
-    val result = referenceClass(FqName("kotlin.Result"))!!.defaultType
-    return this.irType(ClassId(FqName("kotlin"), Name.identifier("Result")), false, emptyList()).classifierOrFail.typeWith(
-        type
-    )
-}
 
 @OptIn(FirIncompatiblePluginAPI::class)
 fun IrPluginContext.typeWith(paramIn: IrType? = null, paramOut: IrType? = null) : IrType? {

@@ -3,7 +3,7 @@ package com.azharkova.kmmkspcases.data
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@kotlinx.serialization.Serializable
+@Serializable
 data class NewsList(@SerialName("articles") val articles: List<NewsItem>)
 
 @Serializable

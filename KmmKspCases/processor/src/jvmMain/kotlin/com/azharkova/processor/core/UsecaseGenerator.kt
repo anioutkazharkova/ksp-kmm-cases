@@ -16,7 +16,7 @@ fun UsecaseData.generateClassSource(): String {
     val inputType = if (classData.paramType == null) Unit::class.java.name else classData.paramType?.name.orEmpty()
     val output = if (classData.returnsTypeData == null) Unit::class.java.name else classData.returnsTypeData?.name.orEmpty()
    val funcParam = if (inputType.contains("Unit")) "" else "param"
-    val executeFunc = com.squareup.kotlinpoet.FunSpec.builder("executeSimple")
+    val executeFunc = com.squareup.kotlinpoet.FunSpec.builder("execute")
         .addModifiers(KModifier.OVERRIDE)
         .addModifiers(KModifier.SUSPEND)
         //.addTypeVariable(TypeVariableName(output))
@@ -45,19 +45,9 @@ fun UsecaseData.generateClassSource(): String {
         .addFunction(executeFunc).build()
 
 
-    val runFunc = FunSpec.builder("requestPerform")
-        .receiver(TypeVariableName(classData.name))
-        .addModifiers(KModifier.SUSPEND)
-        .addParameter("parameter",TypeVariableName(inputType))
-        .addStatement("return (this as ${implClassName}).executeSimple(parameter)")
-        .returns(TypeVariableName(output))
-        .build()
-
-
     return com.squareup.kotlinpoet.FileSpec.builder(classData.packageName, implClassName)
         .addFileComment("Generated automatically")
         .addType(implClassSpec)
-        .addFunction(runFunc)
-      .addImports(classData.imports + listOf("com.azharkova.kmmkspcases.resolve","${classData.packageName}.${classData.name}" ,"${classData.requestClazz?.packageName}.${classData.requestClazz?.name}","${UseCase::class.java.name}", "kotlinx.coroutines.*"))
+      .addImports(classData.imports + listOf("com.azharkova.kmmkspcases.data.*","com.azharkova.kmmkspcases.resolve","${classData.packageName}.${classData.name}" ,"${classData.requestClazz?.packageName}.${classData.requestClazz?.name}","${UseCase::class.java.name}", "kotlinx.coroutines.*"))
         .build().toString().replace(WILDCARDIMPORT, "*")
 }

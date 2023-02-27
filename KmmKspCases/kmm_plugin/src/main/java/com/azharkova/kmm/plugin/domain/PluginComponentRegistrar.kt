@@ -23,7 +23,7 @@ import org.jetbrains.kotlin.resolve.extensions.SyntheticResolveExtension
 class PluginComponentRegistrar() : CompilerPluginRegistrar() {
 
     override val supportsK2: Boolean
-        get() = false
+        get() = true
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
