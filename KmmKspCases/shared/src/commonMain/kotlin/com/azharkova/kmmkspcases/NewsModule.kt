@@ -2,8 +2,6 @@ package com.azharkova.kmmkspcases
 
 import com.azharkova.core.*
 import com.azharkova.kmmkspcases.data.NewsList
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 @ConfigModule(interactor = NewsListInteractor::class,view = INewsListView::class, presenter = NewsListPresenter::class)
 interface NewsListModule
@@ -30,19 +28,3 @@ class NewsListPresenter: BasePresenter<INewsListView>(), INewsListPresenter {
     }
 }
 
-@Interactor
-class NewsListInteractor () : BaseInteractor<INewsListPresenter>(), INewsListInteractor {
-    private var usecase = NewsLoadCase.usecase()
-
-    override fun loadNews() {
-        scope.launch  {
-            usecase.request(Unit).onSuccess {
-                (it as? NewsList)?.let {
-                    presenter?.setupNews(it)
-                }
-            }.onFailure {
-                print(it.message)
-            }
-        }
-    }
-}

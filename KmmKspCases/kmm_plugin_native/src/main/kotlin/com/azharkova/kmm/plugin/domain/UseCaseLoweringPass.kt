@@ -39,12 +39,6 @@ class UseCaseLoweringPass(private val pluginContext: IrPluginContext, private va
         pluginContext.referenceFunctions(CallableId(FqName("kotlin"), Name.identifier("lazy"))).firstOrNull()?.owner
     }
 
-    @OptIn(FirIncompatiblePluginAPI::class)
-    val funPrintln = pluginContext.referenceFunctions(FqName("kotlin.io.println"))
-        .single {
-            val parameters = it.owner.valueParameters
-            parameters.size == 1 && parameters[0].type == pluginContext.irBuiltIns.anyNType
-        }
     var paramIn: IrValueParameter? = null
     private var repoFunction: IrSimpleFunction? = null
     private var requestFunction: IrSimpleFunction? = null
@@ -122,12 +116,12 @@ class UseCaseLoweringPass(private val pluginContext: IrPluginContext, private va
                 visibility = DescriptorVisibilities.PUBLIC
                 modality = Modality.OPEN
                 isSuspend = true
-                this.returnType = function.returnType
+                this.returnType = pluginContext.irBuiltIns.anyType//function.returnType
             }.apply {
                 overriddenSymbols = listOf(pluginContext.executeFunction().symbol!!)
                 addValueParameter {
                     name = Names.PARAM
-                    type = paramIn?.type ?: pluginContext.referenceClass(Names.UNIT)!!.defaultType
+                    type = pluginContext.referenceClass(Names.ANY)?.createType(true, emptyList())!!//paramIn?.type ?: pluginContext.referenceClass(Names.UNIT)!!.defaultType
                 }
                 dispatchReceiverParameter = implClass.thisReceiver?.copyTo(this)
                 this.addExecuteBody()
@@ -182,6 +176,7 @@ class UseCaseLoweringPass(private val pluginContext: IrPluginContext, private va
 
     private fun generateFactory(companionClass: IrClass, implClass: IrClass) {
         var function = companionClass.functions.firstOrNull() { it.name == Names.USECASE_METHOD }
+        function?.returnType = implClass.superTypes.first()
         function?.let {
             function?.dispatchReceiverParameter = companionClass.thisReceiver?.copyTo(function)
             function?.body = pluginContext.blockBody(function.symbol) {
@@ -199,9 +194,11 @@ class UseCaseLoweringPass(private val pluginContext: IrPluginContext, private va
             visibility = DescriptorVisibilities.PUBLIC
             kind = ClassKind.OBJECT
         }
-         pluginContext.typeWith(paramIn, paramOut)?.let {
+        //TODO: for generics only, not supported in KN
+         /*pluginContext.typeWith(paramIn, paramOut)?.let {
             useCaseCls.superTypes = listOf(it)
-        }
+        }*/
+        useCaseCls.superTypes = listOf(pluginContext.referenceClass(ClassIds.COROUTINE_USE_CASE)!!.defaultType)
 
         this.addChild(useCaseCls)
 
@@ -310,7 +307,7 @@ fun IrPluginContext.blockBody(
 @OptIn(FirIncompatiblePluginAPI::class)
 fun IrPluginContext.typeWith(paramIn: IrType? = null, paramOut: IrType? = null) : IrType? {
     val unitType = referenceClass(Names.ANY)!!.defaultType
-    return this.irType(ClassIds.GENERIC_USE_CASE, false, emptyList()).classifierOrFail.typeWith(
+    return this.irType(ClassIds.COROUTINE_USE_CASE, false, emptyList()).classifierOrFail.typeWith(
         paramIn ?: unitType, paramOut ?: unitType
     )
 }

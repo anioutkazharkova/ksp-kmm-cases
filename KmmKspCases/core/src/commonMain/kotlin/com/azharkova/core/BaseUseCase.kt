@@ -39,14 +39,11 @@ public suspend fun<T:Any,R:Any> GenericUseCase<T,R>.request(param: T? = null): R
 }
 
 public interface  SuspendUseCase {
-    /**
-     * Реализация UseCase
-     */
-    suspend fun execute(param: Any? = null): Any
+
+    suspend fun execute(param: Any?): Any
 }
 
 public suspend fun SuspendUseCase.request(param: Any? = null): Result<*> = withContext(Dispatchers.Default) {
-    print("test usecase")
     runCatching {
         execute(param)
     }

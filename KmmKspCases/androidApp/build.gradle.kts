@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.LintOptions
+
 plugins {
     id("com.android.application")
     kotlin("android")
@@ -12,6 +14,9 @@ android {
         targetSdk = 33
         versionCode = 1
         versionName = "1.0"
+    }
+    lint {
+        abortOnError = false
     }
     packagingOptions {
         resources {

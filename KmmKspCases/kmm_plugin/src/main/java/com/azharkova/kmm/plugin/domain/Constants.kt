@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-fun IrPluginContext.executeFunction(): IrSimpleFunction  = this.referenceClass(ClassIds.GENERIC_USE_CASE)?.owner?.functions?.filter {
+fun IrPluginContext.executeFunction(): IrSimpleFunction  = this.referenceClass(ClassIds.COROUTINE_USE_CASE)?.owner?.functions?.filter {
         it.name.asString() == "execute"
     }?.firstOrNull()!!
 
@@ -15,7 +15,7 @@ fun IrPluginContext.executeFunction(): IrSimpleFunction  = this.referenceClass(C
 internal object Names {
     val DEFAULT_COMPANION = Name.identifier("Companion")
     val USECASE_METHOD = Name.identifier("usecase")
-    val USECASE_IMPL = Name.identifier("\$usecase")
+    val USECASE_IMPL = Name.identifier("\$usecaseImpl")
     val GENERIC_USE_CASE = Name.identifier("com.azharkova.core.GenericUseCase")
     val COROUTINE_USE_CASE = Name.identifier("com.azharkova.core.SuspendUseCase")
     val UNIT = FqName("kotlin.Unit")

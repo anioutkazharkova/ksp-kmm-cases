@@ -81,16 +81,17 @@ fun createGetterDescriptor(
     )
 
     val usecaseClass = clazz.module.findClassAcrossModuleDependencies(
-        ClassIds.GENERIC_USE_CASE
+        ClassIds.COROUTINE_USE_CASE
     )!!
 
 
     val returnType = KotlinTypeFactory.simpleNotNullType(
         TypeAttributes.Empty,
        usecaseClass,
-        params.map {
+        emptyList()
+      /*  params.map {
             TypeProjectionImpl(it)
-        }
+        }*/
     )
 
 
