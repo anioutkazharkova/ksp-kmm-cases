@@ -10,8 +10,15 @@ import kotlinx.coroutines.runBlocking
 
 @Interactor
 class NewsListInteractor () : BaseInteractor<INewsListPresenter>(), INewsListInteractor {
-
+  /* val useCase by lazy {
+       SimpleNewsLoadCaseImpl(ApiFactory.NewsApi)
+   }*/
     override fun loadNews() {
+       /* scope.launch {
+            useCase.invoke(Unit).onSuccess {
+                presenter?.setupNews(it)
+            }
+        }*/
         scope.launch {
             NewsLoadCase.usecase().request().onSuccess { data ->
                 (data as? NewsList)?.let {

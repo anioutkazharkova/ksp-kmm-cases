@@ -13,12 +13,15 @@ import shared
 class NewsListModel : ObservableObject, INewsListView {
     var interactor: CoreIInteractor? = nil
 
+    init() {
+        self.interactor =  ConfigFactory.companion.instance.create(view: self)
+        self.interactor?.attachView()
+    }
     
     @Published var items: [NewsItem] = [NewsItem]()
     
     func setup() {
-        self.interactor =  ConfigFactory.companion.instance.create(view: self)
-        self.interactor?.attachView()
+       
     }
     
     func setupNews(data: NewsList) {
@@ -26,7 +29,6 @@ class NewsListModel : ObservableObject, INewsListView {
     }
    
     func loadNews() {
-        setup()
         (interactor as? INewsListInteractor)?.loadNews()
     }
     

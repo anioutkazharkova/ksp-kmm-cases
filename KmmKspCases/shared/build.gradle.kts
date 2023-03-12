@@ -42,7 +42,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
               implementation("com.azharkova.kmm.plugin:kmm_plugin_runtime:0.1.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
-
+                kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
             }
         }
         val androidMain by getting {
