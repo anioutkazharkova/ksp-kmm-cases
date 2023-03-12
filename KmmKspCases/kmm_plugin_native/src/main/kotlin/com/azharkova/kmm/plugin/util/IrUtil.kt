@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
 val usecaseName = FqName("com.azharkova.core.GenUseCase")
+
 fun coroutineUsecase(paramIn: String = "Kotlin.Unit", paramOut: String = "Kotlin.Unit") = FqName("com.azharkova.core.SuspendUseCase<${paramIn}, ${paramOut}>")
 
 fun ClassDescriptor.isUseCase(): Boolean =

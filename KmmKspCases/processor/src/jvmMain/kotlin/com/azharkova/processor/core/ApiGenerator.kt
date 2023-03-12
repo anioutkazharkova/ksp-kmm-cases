@@ -11,45 +11,25 @@ import com.squareup.kotlinpoet.*
 fun List<ApiData>.generateClassSource(): String {
     val classData = this
     val packageName = classData.first().packageName
-
     val className = "ApiFactory"
-
     val imports = mutableListOf<String>()
     classData.forEach {
         imports.addAll(it.imports)
     }
-
-    val createFunction = com.squareup.kotlinpoet.FunSpec.builder("resolve")
-        .returns(IApi::class.asTypeName().copy(nullable = true))
-        .addStatement("val api = ")
-        .beginControlFlow("when (this)")
-        .apply {
-            classData.forEach {
-                addStatement("is ${it.name} -> ${it.name}Impl()")
-            }
-        }.addStatement("else -> null").endControlFlow().addStatement("return api").build()
-
     val companion = TypeSpec.companionObjectBuilder()
-       .addFunction(createFunction)
-        .build()
-    val implClassSpec = com.squareup.kotlinpoet.TypeSpec.classBuilder(className)
-        .addType(companion)
-        .build()
-
-
-    return com.squareup.kotlinpoet.FileSpec.builder(packageName, className)
-        .addFileComment("Generated automatically")
-      //  .addFunction(createFunction)
-      //  .addType(implClassSpec)
         .apply {
-        classData.forEach { api ->
-           addFunction(FunSpec.builder("resolve")
-                .receiver(TypeVariableName(api.name.orEmpty()))
-                .addStatement("return ${api.name.orEmpty()}Impl()")
-                .returns(TypeVariableName(api.name.orEmpty()))
-                .build())
-        }
-    }
+            classData.forEach { api ->
+                addProperty(PropertySpec.builder("${api.name}",TypeVariableName(api.name)).delegate(CodeBlock.builder()
+                    .beginControlFlow("lazy(mode = %T.SYNCHRONIZED)", LazyThreadSafetyMode::class.asTypeName())
+                    .add("${api.name}Impl()")
+                    .endControlFlow()
+                    .build()).build())
+            }
+        }.build()
+    val clazz = TypeSpec.classBuilder("ApiFactory").addType(companion).build()
+    return FileSpec.builder(packageName, className)
+        .addFileComment("Generated automatically")
+        .addType(clazz)
         .addImports(imports)
         .build().toString().replace(WILDCARDIMPORT, "*")
 }

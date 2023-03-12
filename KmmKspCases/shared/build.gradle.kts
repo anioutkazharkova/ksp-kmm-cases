@@ -30,6 +30,9 @@ kotlin {
     }
 
     sourceSets {
+        configureEach {
+            kotlin.srcDir("$buildDir/generated/ksp/$name/kotlin/")
+        }
         val commonMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-jdk8"))
@@ -39,12 +42,12 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
               implementation("com.azharkova.kmm.plugin:kmm_plugin_runtime:0.1.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
-           // kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
+
             }
         }
         val androidMain by getting {
             dependencies {
-             //  kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
+             // kotlin.srcDir("${buildDir.absolutePath}/generated/ksp/")
             }
         }
         val iosX64Main by getting
@@ -73,7 +76,6 @@ dependencies {
     implementation(project(":processor"))
     add("kspCommonMainMetadata", project(":processor"))
     add("kspIosX64", project(":processor"))
-//    add("kspSimulatorArm64", project(":processor"))
     add("kspIosSimulatorArm64",  project(":processor"))
     add("kspIosArm64", project(":processor"))
     add("kspAndroid", project(":processor"))

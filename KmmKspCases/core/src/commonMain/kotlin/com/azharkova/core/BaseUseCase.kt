@@ -3,63 +3,49 @@ package com.azharkova.core
 import com.azharkova.core.CoroutineUseCase
 import kotlinx.coroutines.*
 
-data class ParamIn(var value: Any? = null)
-
-data class ParamOut(var value: Any? = null)
-
 interface BaseUseCase<in P, out R> {
     suspend fun execute(params: P):R? = null
 }
 
-interface IUseCase {
-    suspend fun execute(paramIn: ParamIn):ParamOut = ParamOut()
-}
 
-
-abstract public class CoroutineUseCase<in T:Any, out R:Any>(
+abstract public class CoroutineUseCase<in T, out R>(
     val dispatcher: CoroutineDispatcher = ioDispatcher
 ) {
     /**
      * Реализация UseCase
      */
-    open suspend fun<T:Any, R: Any> execute(param: T): R = kotlin.TODO()
+   abstract suspend fun execute(param: T): R
 
-    open suspend fun executeSimple(param: T): R = kotlin.TODO()
-    /**
-     * Выполняет UseCase
-     */
     suspend operator fun invoke(param: T): Result<R> = withContext(dispatcher) {
-        runCatching { executeSimple(param) }
-    }
-    inline public suspend fun<reified T:Any, R: Any> request(param: T): Result<R> = withContext(Dispatchers.Default) {
-       print("test usecase")
-        runCatching {
-            execute<T,R>(param) }
+        runCatching { execute(param) }
     }
 }
 
+public interface GenericUseCase<T : Any,R: Any> {
+    suspend fun execute(param: T? = null): R
+}
+
+public suspend fun<T:Any,R:Any> GenericUseCase<T,R>.request(param: T? = null): Result<R> = withContext(
+    ioDispatcher) {
+    print("test usecase")
+    try {
+        runCatching {
+            execute(param)
+        }
+    } catch (e: Throwable) {
+        print(e.message)
+        throw  e
+    }
+}
 
 public interface  SuspendUseCase {
-    /**
-     * Реализация UseCase
-     */
-    suspend fun execute(param: Any? = null): Any
 
-
-    /*open suspend fun<T:Any, R: Any> execute(param: T): R =  kotlin.TODO()
-
-    suspend fun executeSimple(param: T): R = kotlin.TODO()
-
-    inline public suspend fun<reified T:Any, R: Any> request(param: T): Result<R> = withContext(Dispatchers.Default) {
-        print("test usecase")
-        runCatching {
-            execute(param) }
-    }*/
+    suspend fun execute(param: Any?): Any
 }
 
 public suspend fun SuspendUseCase.request(param: Any? = null): Result<*> = withContext(Dispatchers.Default) {
-    print("test usecase")
     runCatching {
-        execute(param) }
+        execute(param)
+    }
 }
 
