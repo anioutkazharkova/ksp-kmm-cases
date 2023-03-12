@@ -6,45 +6,29 @@ import org.jetbrains.kotlin.backend.common.ClassLoweringPass
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.backend.jvm.ir.erasedUpperBound
-import org.jetbrains.kotlin.backend.wasm.ir2wasm.getSuperClass
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.resolve.constants.KClassValue.Value.NormalClass
-import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.*
 import org.jetbrains.kotlin.ir.declarations.*
-import org.jetbrains.kotlin.ir.declarations.impl.IrFunctionImpl
 import org.jetbrains.kotlin.ir.expressions.IrBlockBody
-import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
-import org.jetbrains.kotlin.ir.expressions.addArgument
 import org.jetbrains.kotlin.ir.expressions.impl.IrDelegatingConstructorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionExpressionImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrInstanceInitializerCallImpl
-import org.jetbrains.kotlin.ir.interpreter.toIrConst
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
-import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
-import org.jetbrains.kotlin.ir.symbols.impl.IrSimpleFunctionSymbolImpl
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
-import org.jetbrains.kotlin.ir.types.impl.buildSimpleType
 import org.jetbrains.kotlin.ir.util.*
-import org.jetbrains.kotlin.js.descriptorUtils.getJetTypeFqName
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.psi2ir.findSingleFunction
-import org.jetbrains.kotlin.resolve.descriptorUtil.getSuperClassNotAny
-import org.jetbrains.kotlin.resolve.descriptorUtil.module
-import org.jetbrains.kotlin.types.TypeSubstitution
 
 class UseCaseLoweringPass(private val pluginContext: IrPluginContext, private val messageCollector: MessageCollector) :
     ClassLoweringPass {
@@ -61,115 +45,116 @@ class UseCaseLoweringPass(private val pluginContext: IrPluginContext, private va
             val parameters = it.owner.valueParameters
             parameters.size == 1 && parameters[0].type == pluginContext.irBuiltIns.anyNType
         }
+    var paramIn: IrValueParameter? = null
+    private var repoFunction: IrSimpleFunction? = null
+    private var requestFunction: IrSimpleFunction? = null
+    private var apiType: IrType? = null
+    private var apiImplType: IrType? = null
+
+    var request = ""
 
     @OptIn(FirIncompatiblePluginAPI::class, ObsoleteDescriptorBasedAPI::class)
     override fun lower(irClass: IrClass) {
         if (!irClass.toIrBasedDescriptor().isUseCase()) {
             return
         }
+        //Получаем ссылку на параметры из аннотации Repo и ParamIn
+        irClass.retrieveParams()
 
-
-        var apiRef: IrType? = null
-        var request: String = ""
-        var paramIn: IrValueParameter? = null
-        irClass.toIrBasedDescriptor().annotations.firstOrNull { it.fqName == usecaseName }?.let {
-            it.allValueArguments.forEach { (name, value) ->
-
-                if (name.asString() == "repo") {
-                    apiRef = pluginContext.referenceClass((value.value as NormalClass).classId)?. defaultType
-
-
-                }
-                if (name.asString() == "request") {
-
-                    request = value.toString().replace("\"","")
-                    messageCollector.report(CompilerMessageSeverity.WARNING, request)
-                }
-            }
-        }
-        val apiImpl = pluginContext.referenceClass(FqName(apiRef?.classFqName?.asString().orEmpty() + "Impl"))!!.defaultType
-
-        val requestFunction = apiImpl?.getClass()?.functions?.firstOrNull { it.name.asString() == request }
-        messageCollector.report(CompilerMessageSeverity.WARNING, requestFunction?.name?.asString().orEmpty())
-
-       paramIn = requestFunction?.valueParameters?.firstOrNull()
-
-        val implClass = irClass.addUseCaseImpl(paramOut = requestFunction?.returnType)
-
-       val repoFunction = implClass.addFunction {
-           name = Name.identifier("repo")
-           visibility = DescriptorVisibilities.PRIVATE
-           returnType = apiImpl//pluginContext.referenceClass(FqName(apiRef?.classFqName?.asString().orEmpty() + "Impl"))!!.defaultType
-        }.apply {
-           val function = this
-           dispatchReceiverParameter = implClass.thisReceiver?.copyTo(this)
-           val implName = this.returnType.classFqName?.asString().orEmpty()//.classFqName?.asString() + "Impl"
-          /* body = DeclarationIrBuilder(pluginContext, symbol).irBlockBody {
-               +irReturn(
-                   irCallConstructor(
-                       pluginContext.referenceClass(FqName(implName))!!.constructors.first(),
-                       emptyList()
-                   )
-               )
-           }*/
-           this.body = createLazyBody(function)
-       }
-
-        val propertyClassSymbol: IrClassSymbol = apiImpl?.getClass()?.symbol!!
-        val propertyClass: IrClass = propertyClassSymbol.owner
-        val propertyFunction = requestFunction
-
-        val executeFunction = pluginContext.referenceClass(ClassIds.GENERIC_USE_CASE)?.owner?.functions?.filter {
-            it.name.asString() == "execute"
-        }?.firstOrNull()
-
-        val invokeFunction = implClass?.superTypes?.lastOrNull()?.getClass()?.functions?.filter {
-            it.name.asString() == "request"
-        }?.firstOrNull()
-
-
-        requestFunction?.let { function ->
-            val newFunction = implClass.addFunction {
-                name = Name.identifier("execute")
-                visibility = DescriptorVisibilities.PUBLIC
-                modality = Modality.OPEN
-              //  isFakeOverride = true
-                isSuspend = true
-                this.returnType = function.returnType
-               // origin = IrDeclarationOrigin.FAKE_OVERRIDE
-            }.apply {
-               overriddenSymbols = listOf(executeFunction?.symbol!!)
-                addValueParameter {
-                    name = Name.identifier("param")
-                    type = paramIn?.type ?: pluginContext.referenceClass(Names.UNIT)!!.defaultType
-                }
-                dispatchReceiverParameter = implClass.thisReceiver?.copyTo(this)
-                val newFunction = this
-
-                newFunction.body =
-                    DeclarationIrBuilder(pluginContext, newFunction.symbol).irBlockBody {
-                        val block = irReturn(irCall(requestFunction!!.symbol, requestFunction!!.returnType).apply {
-                            paramIn?.let {
-                                this.putValueArgument(0, irGet(paramIn))
-                            }
-                            dispatchReceiver =
-                                irCall(repoFunction.symbol, repoFunction.returnType).apply {
-                                    paramIn?.let {
-                                        this.putValueArgument(0, irGet(paramIn))
-                                    }
-                                    dispatchReceiver =
-                                        irGet(newFunction.dispatchReceiverParameter!!)
-                                }
-                        })
-                       +block
-
-                    }
-            }
-        }
-
+        //Функция запроса из API
+        requestFunction =
+            apiImplType?.getClass()?.functions?.firstOrNull { it.name.asString() == request }
+        //Входной параметр функции из API
+        paramIn = requestFunction?.valueParameters?.firstOrNull()
+        //Добавляем внутренний класс
+        val implClass = irClass.addUseCaseImpl(paramIn = paramIn?.type, paramOut = requestFunction?.returnType)
+        //Добавляем lazy свойство для API
+        implClass.addRepoLazyFunc()
+        //Добавляем
+        implClass.addExecutionFunction()
+        //Соединяем companion основного класса и объект внутреннего класса
         generateFactory(irClass.companionObject() as IrClass, implClass)
         messageCollector.report(CompilerMessageSeverity.WARNING, irClass.dump())
     }
+
+    @OptIn(FirIncompatiblePluginAPI::class)
+    private fun IrClass.retrieveParams() {
+        this.toIrBasedDescriptor().annotations
+            .firstOrNull { it.fqName == usecaseName }?.let {
+                it.allValueArguments.forEach { (name, value) ->
+                    if (name.asString() == "repo") {
+                        apiType =
+                            pluginContext.referenceClass((value.value as NormalClass).classId)
+                                ?.defaultType
+                    }
+                    if (name.asString() == "request") {
+                        request = value.toString().replace("\"", "")
+                    }
+                }
+            }
+        //Конкретизируем тип
+        apiImplType = pluginContext.referenceClass(
+            FqName(
+                apiType?.classFqName?.asString().orEmpty() + "Impl"
+            )
+        )!!.defaultType
+    }
+
+    private fun IrClass.addRepoLazyFunc() {
+        val implClass = this
+        repoFunction = implClass.addFunction {
+            name = Names.REPO
+            visibility = DescriptorVisibilities.PRIVATE
+            returnType = apiImplType!!
+        }.apply {
+            val function = this
+            dispatchReceiverParameter = implClass.thisReceiver?.copyTo(this)
+            this.body = createLazyBody(function)
+        }
+    }
+
+    @OptIn(FirIncompatiblePluginAPI::class)
+    private fun IrClass.addExecutionFunction() {
+        val implClass = this
+        requestFunction?.let { function ->
+           implClass.addFunction {
+                name = Names.EXECUTE
+                visibility = DescriptorVisibilities.PUBLIC
+                modality = Modality.OPEN
+                isSuspend = true
+                this.returnType = function.returnType
+            }.apply {
+                overriddenSymbols = listOf(pluginContext.executeFunction().symbol!!)
+                addValueParameter {
+                    name = Names.PARAM
+                    type = paramIn?.type ?: pluginContext.referenceClass(Names.UNIT)!!.defaultType
+                }
+                dispatchReceiverParameter = implClass.thisReceiver?.copyTo(this)
+                this.addExecuteBody()
+            }
+        }
+    }
+
+    private fun IrFunction.addExecuteBody() {
+        val newFunction = this
+        newFunction.body =
+            DeclarationIrBuilder(pluginContext, newFunction.symbol).irBlockBody {
+                +irReturn(irCall(requestFunction!!.symbol, requestFunction!!.returnType).apply {
+                    paramIn?.let { paramIn ->
+                        this.putValueArgument(0, irGet(paramIn))
+                    }
+                    dispatchReceiver =
+                        irCall(repoFunction!!.symbol, repoFunction!!.returnType).apply {
+                            paramIn?.let {
+                                this.putValueArgument(0, irGet(paramIn!!))
+                            }
+                            dispatchReceiver =
+                                irGet(newFunction.dispatchReceiverParameter!!)
+                        }
+                })
+            }
+    }
+
 
     private fun createLazyBody(
         function: IrFunction
@@ -214,9 +199,7 @@ class UseCaseLoweringPass(private val pluginContext: IrPluginContext, private va
             visibility = DescriptorVisibilities.PUBLIC
             kind = ClassKind.OBJECT
         }
-
-       // useCaseCls.superTypes = listOf(pluginContext.irType(ClassIds.COROUTINE_USE_CASE, false, emptyList()))
-        pluginContext.typeWith(paramIn, paramOut)?.let {
+         pluginContext.typeWith(paramIn, paramOut)?.let {
             useCaseCls.superTypes = listOf(it)
         }
 
@@ -323,13 +306,6 @@ fun IrPluginContext.blockBody(
 ): IrBlockBody =
     DeclarationIrBuilder(this, symbol).irBlockBody { block() }
 
-@OptIn(FirIncompatiblePluginAPI::class)
-fun IrPluginContext.resultWith(type: IrType):IrType? {
-    val result = referenceClass(FqName("kotlin.Result"))!!.defaultType
-    return this.irType(ClassId(FqName("kotlin"), Name.identifier("Result")), false, emptyList()).classifierOrFail.typeWith(
-        type
-    )
-}
 
 @OptIn(FirIncompatiblePluginAPI::class)
 fun IrPluginContext.typeWith(paramIn: IrType? = null, paramOut: IrType? = null) : IrType? {

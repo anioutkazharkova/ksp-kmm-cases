@@ -26,6 +26,10 @@ android {
 }
 
 dependencies {
+    implementation("com.google.android.material:material:1.8.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("com.squareup.picasso:picasso:2.71828")
     implementation(project(":shared"))
     implementation(project(":core"))
     implementation("androidx.compose.ui:ui:1.2.1")

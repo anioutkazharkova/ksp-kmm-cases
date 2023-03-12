@@ -19,6 +19,7 @@ fun ModuleData.generateClassSource():String {
     val setupFunction = com.squareup.kotlinpoet.FunSpec.builder("setup")
         .receiver(TypeVariableName(classData.view.resolveTypeName()))
         .addStatement("this.interactor = ConfigFactory.instance.create(this)")
+        .addStatement("this.interactor?.attachView()")
 
     val configurateFunction = com.squareup.kotlinpoet.FunSpec.builder("configurate")
         .addModifiers(com.squareup.kotlinpoet.KModifier.OVERRIDE)
@@ -44,8 +45,8 @@ fun ModuleData.generateClassSource():String {
     return com.squareup.kotlinpoet.FileSpec.builder(classData.packageName, implClassName)
         .addFileComment("Generated automatically")
         .addImports(classData.imports + listOf("${classData.packageName}.ConfigFactory"))
+        .addFunction(setupFunction.build())
         .addType(implClassSpec)
         .addFunction(interactorFunction.build())
-        .addFunction(setupFunction.build())
         .build().toString().replace(WILDCARDIMPORT, "*")
 }

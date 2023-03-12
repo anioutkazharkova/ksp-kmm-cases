@@ -17,6 +17,16 @@ fun getParamValue(annotation: KSAnnotation, paramName: String): KSType? {
 
     return annotationArgumentValue
 }
+
+fun getParamValueList(annotation: KSAnnotation, paramName: String): List<KSType>? {
+    val annotationArgument = annotation.arguments
+        .find { argument -> argument.name?.asString() == paramName }
+    //logger.warn(annotationArgument?.value.toString())
+    val annotationArgumentValue = annotationArgument?.value as? List<KSType>
+
+    return annotationArgumentValue
+}
+
 fun getParamValueSimple(annotation: KSAnnotation, paramName: String): Any? {
     val annotationArgument = annotation.arguments
         .find { argument -> argument.name?.asString() == paramName }

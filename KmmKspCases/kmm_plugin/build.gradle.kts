@@ -8,8 +8,8 @@ plugins {
 
 dependencies {
     implementation("junit:junit:4.12")
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.0")
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.8.0")
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10")
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.8.10")
     implementation(project(":kmm_plugin_runtime"))
     kapt("com.google.auto.service:auto-service:1.0-rc7")
     compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")

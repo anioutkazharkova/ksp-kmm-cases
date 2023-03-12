@@ -4,8 +4,10 @@ import com.azharkova.core.GenUseCase
 import com.azharkova.core.RequestType
 import com.azharkova.core.UseCase
 
-@GenUseCase(repo = TestApi::class, request = "loadNews")
+@GenUseCase(repo = NewsApi::class, request = "loadNews")
 class NewsLoadCase
 
-@UseCase(repo = TestApi::class, request = RequestType.NEWS)
+@UseCase(repo = NewsApi::class, request = RequestType.NEWS)
 interface SimpleNewsLoadCase
+
+

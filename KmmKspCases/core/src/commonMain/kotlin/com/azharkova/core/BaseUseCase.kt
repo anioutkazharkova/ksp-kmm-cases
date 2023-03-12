@@ -25,10 +25,17 @@ public interface GenericUseCase<T : Any,R: Any> {
     suspend fun execute(param: T? = null): R
 }
 
-public suspend fun<T:Any,R:Any> GenericUseCase<T,R>.request(param: T? = null): Result<R> = withContext(Dispatchers.Default) {
+public suspend fun<T:Any,R:Any> GenericUseCase<T,R>.request(param: T? = null): Result<R> = withContext(
+    ioDispatcher) {
     print("test usecase")
-    runCatching {
-        execute(param) }
+    try {
+        runCatching {
+            execute(param)
+        }
+    } catch (e: Throwable) {
+        print(e.message)
+        throw  e
+    }
 }
 
 public interface  SuspendUseCase {

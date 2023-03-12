@@ -7,7 +7,7 @@ import com.azharkova.kmmkspcases.data.NewsList
 import com.azharkova.network.GET
 
 @Api
-interface TestApi {
+interface NewsApi {
     @GET(LOAD_CRUNCH)
     @BindRequest(RequestType.NEWS)
     suspend fun loadNews(): NewsList

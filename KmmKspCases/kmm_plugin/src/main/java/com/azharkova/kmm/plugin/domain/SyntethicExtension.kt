@@ -19,9 +19,7 @@ import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.*
 
 class SyntethicExtension(): SyntheticResolveExtension {
-    /**
-     * Ensure companion is added to the class
-     */
+
     override fun getSyntheticCompanionObjectNameIfNeeded(thisDescriptor: ClassDescriptor): Name? =
         if (thisDescriptor.isUsecase) {
             Names.DEFAULT_COMPANION
